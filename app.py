@@ -1,11 +1,17 @@
 import streamlit as st
 
+from chains.jd_analysis_chain import analyze_jd
+from chains.resume_analysis_chain import analyze_resume
 from fallback_report import build_fallback_report
 from jd_parser import extract_skills_by_category
 from llm_utils import call_llm
 from matcher import calculate_match
 from prompts import build_analysis_prompt
 from resume_parser import extract_resume_text
+from chains.gap_analysis_chain import analyze_gap
+
+def format_list(items: list) -> str:
+    return ", ".join(str(item) for item in items) or "暂无"
 
 
 st.set_page_config(page_title="JobFit 简历-JD 匹配分析系统", layout="wide")
@@ -50,6 +56,32 @@ with right:
         jd_skills = extract_skills_by_category(jd_text)
         resume_skills = extract_skills_by_category(resume_text)
         match_result = calculate_match(jd_skills, resume_skills)
+        jd_analysis = {}
+        resume_analysis = {}
+        gap_analysis = {}
+        try:
+            jd_analysis = analyze_jd(jd_text)
+
+            st.subheader("JD 结构化分析")
+            st.write("核心要求：", format_list(jd_analysis.get("core_requirements", [])))
+            st.write("岗位职责：", format_list(jd_analysis.get("responsibilities", [])))
+            st.write("工程化要求：", format_list(jd_analysis.get("engineering_requirements", [])))
+            st.write("加分项：", format_list(jd_analysis.get("bonus_points", [])))
+        except Exception as error:
+            st.warning(f"JD 结构化分析失败：{error}")
+
+        try:
+            resume_analysis = analyze_resume(resume_text)
+
+            st.subheader("简历结构化分析")
+            st.write("教育背景：", format_list(resume_analysis.get("education", [])))
+            st.write("项目经历：", format_list(resume_analysis.get("projects", [])))
+            st.write("技术能力：", format_list(resume_analysis.get("technical_skills", [])))
+            st.write("Agent 相关经历：", format_list(resume_analysis.get("agent_related_experience", [])))
+            st.write("工程化经验：", format_list(resume_analysis.get("engineering_experience", [])))
+            st.write("表达薄弱点：", format_list(resume_analysis.get("weak_points", [])))
+        except Exception as error:
+            st.warning(f"简历结构化分析失败：{error}")
 
         st.write("简历解析结果预览：")
         st.text(resume_text[:1000])
@@ -66,8 +98,8 @@ with right:
                 st.write(f"岗位要求：{jd_skill_text}")
                 st.write(f"已匹配：{matched_skill_text}")
                 st.write(f"待补强：{missing_skill_text}")
-
-        prompt = build_analysis_prompt(resume_text, jd_text, match_result)
+        gap_analysis = analyze_gap(jd_analysis, resume_analysis, match_result)
+        prompt = build_analysis_prompt(resume_text, jd_text, match_result, jd_analysis, resume_analysis, gap_analysis)
         try:
             with st.spinner("正在生成大模型分析报告..."):
                 report = call_llm(prompt)

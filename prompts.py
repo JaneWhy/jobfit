@@ -1,4 +1,4 @@
-def build_analysis_prompt(resume_text: str, jd_text: str, match_result: dict) -> str:
+def build_analysis_prompt(resume_text: str, jd_text: str, match_result: dict, jd_analysis:dict, resume_analysis:dict, gap_analysis:dict) -> str:
     return f"""
 你是一个专业的求职简历优化助手，请根据用户的简历和岗位 JD，生成一份实习投递分析报告。
 
@@ -13,9 +13,18 @@ def build_analysis_prompt(resume_text: str, jd_text: str, match_result: dict) ->
 岗位 JD：
 {jd_text}
 
-简历内容：
+JD结构化分析：
+{jd_analysis}
+
+简历结构化分析：
+{resume_analysis}
+
+简历原文：
 {resume_text}
 
 规则匹配结果：
 {match_result}
+
+差距分析结果：
+{gap_analysis}
 """

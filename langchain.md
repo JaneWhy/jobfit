@@ -141,3 +141,7 @@ Agent 判断要先分析 JD
 
 一句话总结：  
 **先 Chain 化，再结构化，再工具化，最后 Agent 化。**这样改最稳，也最符合这个岗位 JD。
+
+2026.29 15:31
+将原有 OpenAI SDK 直连调用改造为 LangChain Chain，通过 ChatPromptTemplate + ChatOpenAI + StrOutputParser 组合完成报告生成，保留原有 call_llm() 接口，降低对上层 Streamlit 页面逻辑的影响。
+
